@@ -1,42 +1,58 @@
-# Latent Forge
+# latent_forge
 
-**Open-source infrastructure experiments for local and distributed AI.**
+Experiments in local AI inference — a collection of documentation and scripts for running, benchmarking, and evaluating large language models locally.
 
+## Overview
 Latent Forge documents and automates practical AI infrastructure built from local hardware: model serving, multi-node inference, high-speed networking, storage, containers, accelerators, agent runtimes, monitoring, and performance testing.
 
-The focus is reproducibility. Each experiment records the hardware, network topology, runtime configuration, exact commands that worked, validation steps, measured results, and a short postmortem for failures that materially changed the final design.
+`latent_forge` provides:
 
-## Current experiments
+- **Scripts** for downloading models, running inference, and benchmarking performance.
+- **Tests** for validating model outputs and infrastructure.
+- **Documentation** on setup, usage, and tips for local AI experiments.
 
-### Two-node NVIDIA GB10 inference with vLLM + Ray
+## Requirements
 
-A dense, unquantized `Qwen/Qwen3-32B` model was split across two NVIDIA GB10 nodes using vLLM pipeline parallelism over a dedicated 10 GbE network.
+- Python 3.10+
+- [Ollama](https://ollama.ai) or another local inference backend (e.g. llama.cpp, LM Studio)
+- Sufficient VRAM/RAM for the models you want to run (see model-specific notes below)
 
-Validated results:
+Install Python dependencies:
 
-- 2 physical GB10 nodes
-- Ray distributed executor
-- pipeline parallelism: 2 stages
-- tensor parallelism: 1
-- dedicated 10 GbE path: ~9.4 Gbit/s each direction
-- model: `Qwen/Qwen3-32B`, BF16/unquantized
-- context: 16,384 tokens
-- single request: ~3.6 completion tokens/s
-- four concurrent requests: ~14.0 completion tokens/s aggregate
+```bash
+pip install -r requirements.txt
+```
 
-Full setup and benchmark:
+## Repository Structure
 
-- [Two-Node NVIDIA GB10 vLLM + Ray Setup and Benchmark](docs/two-node-gb10-vllm-ray-setup.md)
+```
+latent_forge/
+├── README.md            # This file
+├── requirements.txt     # Python dependencies
+├── scripts/
+│   ├── run_inference.py         # Run a single prompt against a local model
+│   ├── benchmark.py             # Benchmark tokens-per-second for a model
+│   └── download_model.sh        # Helper to pull a model via Ollama
+└── tests/
+    ├── test_inference.py        # Smoke tests for the inference script
+    └── test_benchmark.py        # Tests for the benchmark script
+```
 
-### Agent runtimes: Hermes and OpenClaw
+## Quick Start
 
-Latent Forge also records hands-on evaluations of general-purpose autonomous-agent runtimes rather than treating them as interchangeable wrappers around an LLM.
+### 1. Pull a model with Ollama
 
-- [Hermes Agent — Setup, Use, and Lab Evaluation](docs/hermes-agent.md) — current preferred agent runtime; solid in our testing, with good diagnostics, persistent memory, skills, messaging gateways, and broad provider support.
-- [OpenClaw — Setup, Use, and Lab Evaluation](docs/openclaw-agent.md) — compelling architecture and broad channel support, but substantially more operationally fragile in our lab. The notes preserve Docker permission failures, state/device issues, a systemd restart loop caused by invalid config, and a local Gemma/llama.cpp chat-template incompatibility.
+```bash
+bash scripts/download_model.sh llama3
+```
 
-The current lab conclusion is deliberately empirical: **Hermes is preferred; OpenClaw remains experimental and worth periodically retesting.**
+### 2. Run inference
 
+```bash
+python scripts/run_inference.py --model llama3 --prompt "Explain transformers in one sentence."
+```
+
+### 3. Benchmark
 ### Security and reliability
 
 Because this repository is public and contains operational infrastructure examples, security and reliability are treated as part of the design rather than as cleanup work.
@@ -47,16 +63,53 @@ The working rule is simple: **make the experiment reproducible without publishin
 
 ### Local AI operations and model tracking
 
-The repository also contains reusable local-AI operational assets that were separated from the ChartSense application repository:
+```bash
+python scripts/benchmark.py --model llama3 --runs 5
+```
 
-- [Model registry](docs/model-registry.md) — historical model choices and lessons learned
-- [Experimentation log](docs/experimentation-log.md) — infrastructure experiments such as remote Open WebUI over Tailscale
-- [Ollama inventory snapshot](inventory/ollama-model-inventory-2026-07-16.json) — a point-in-time local model inventory
-- `scripts/healthcheck.sh` — generic checks for Docker, SSH, Tailscale, Ollama, Open WebUI, disk, and NVIDIA GPU visibility
-- `scripts/monitor-local-ai.sh` — one-shot host, GPU, Ollama, Docker, Tailscale, and AI service-port status
+### 4. Run tests
 
-## Repository layout
+```bash
+python -m pytest tests/
+```
 
+## Scripts
+
+### `scripts/run_inference.py`
+
+Sends a prompt to a locally running model via the Ollama HTTP API and prints the response.
+
+| Argument | Default | Description |
+|---|---|---|
+| `--model` | `llama3` | Model name as known to Ollama |
+| `--prompt` | *(required)* | The prompt text |
+| `--host` | `http://localhost:11434` | Ollama API base URL |
+| `--temperature` | `0.7` | Sampling temperature |
+
+### `scripts/benchmark.py`
+
+Measures tokens-per-second for a given model across multiple runs.
+
+| Argument | Default | Description |
+|---|---|---|
+| `--model` | `llama3` | Model name |
+| `--prompt` | `"Hello!"` | Prompt used for each run |
+| `--runs` | `3` | Number of timed runs |
+| `--host` | `http://localhost:11434` | Ollama API base URL |
+
+### `scripts/download_model.sh`
+
+Thin wrapper around `ollama pull`. Pass the model name as the first argument.
+
+```bash
+bash scripts/download_model.sh mistral
+```
+
+## Tips
+
+- Keep models on an NVMe SSD for best load times.
+- Prefer quantised models (Q4_K_M or Q5_K_M) for a good quality/speed trade-off on consumer hardware.
+- Set `OLLAMA_NUM_PARALLEL=1` to avoid OOM errors when VRAM is tight.
 ```text
 latent_forge/
 ├── README.md
@@ -79,8 +132,9 @@ latent_forge/
 
 The repository will expand as additional runtimes, models, accelerators, network layouts, storage patterns, monitoring tools, and agent frameworks are tested.
 
-## Design principles
+## Contributing
 
+Open issues or PRs to add new models, scripts, or evaluation datasets.
 1. **Document the physical layer.** Cabling, negotiated link speed, routing, and switch-port choice matter.
 2. **Pin the working runtime.** Record the container image, CUDA/PyTorch/vLLM versions, and model identifier.
 3. **Make networking explicit.** Multi-homed machines should not be allowed to choose distributed-compute paths accidentally.
@@ -94,6 +148,7 @@ The repository will expand as additional runtimes, models, accelerators, network
 11. **Fail safely.** Validate configuration before starting managed services, use restart backoff, and make unhealthy states obvious rather than silently self-restarting forever.
 12. **Monitor without perturbing.** Prefer lightweight observation, distinguish snapshots from time-series evidence, and document how metrics were measured.
 
-## Status
+## License
 
+See [LICENSE](LICENSE).
 Early-stage lab repository. The first documented multi-node configuration is operational and benchmarked, generic local-AI operational assets are being consolidated here, agent runtimes are being evaluated as a separate infrastructure layer, and security/reliability rules now govern what gets published.
