@@ -51,6 +51,12 @@ The lab is intentionally small, but many of the concerns are the same ones that 
 
 See [Local AI Lab vs Enterprise-Grade Cloud Infrastructure](docs/local-vs-enterprise-cloud-ai-infrastructure.md) for a detailed comparison of the current stack with a typical enterprise cloud inference platform, including where the local environment already uses production-style patterns and where enterprise systems add high availability, autoscaling, IAM, centralized secrets, observability, governance, CI/CD, and infrastructure-as-code.
 
+### Project roadmap: Level 1 → Level 3
+
+The near-term goal is to evolve the lab from a repeatable environment into a production-style private AI platform without adding enterprise machinery that the current scale does not justify.
+
+See [Roadmap: Level 1 → Level 3](docs/roadmap-level1-to-level3.md). It organizes the work into milestones for observability, managed services, configuration-as-code, metrics and alerting, backup/recovery, secrets and network hardening, failure testing, redundant serving, ingress, request tracing, and controlled deployments.
+
 ## Repository structure
 
 ```text
@@ -63,6 +69,7 @@ latent_forge/
 │   ├── model-registry.md
 │   ├── openclaw-agent.md
 │   ├── openwebui.md
+│   ├── roadmap-level1-to-level3.md
 │   ├── security-reliability.md
 │   └── two-node-gb10-vllm-ray-setup.md
 ├── inventory/
@@ -134,4 +141,4 @@ The working rule is simple: **make the experiment reproducible without publishin
 
 ## Status
 
-Early-stage lab repository. Multi-node vLLM inference is operational and benchmarked, llama.cpp and Ollama have been used for local model serving and experimentation, Open WebUI is implemented as the browser interface, and Hermes/OpenClaw are being evaluated as a separate agent layer.
+Early-stage lab repository. Multi-node vLLM inference is operational and benchmarked, llama.cpp and Ollama have been used for local model serving and experimentation, Open WebUI is implemented as the browser interface, and Hermes/OpenClaw are being evaluated as a separate agent layer. The active roadmap now targets Level 3: a production-style private AI platform with managed services, historical observability, explicit security controls, recovery testing, redundant serving options, and controlled deployment workflows.
