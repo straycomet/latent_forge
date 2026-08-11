@@ -1,0 +1,58 @@
+[
+  {
+    "id": "llama3.2-vision:11b",
+    "name": "llama3.2-vision:11b",
+    "provider": "ollama",
+    "connection_type": "local",
+    "loaded_at_export": false,
+    "is_active": true,
+    "size_bytes": 7816589186,
+    "digest": "6f2f9757ae97e8a3f8ea33d6adb2b11d93d9a35bef277cd2c0b1b5af8e8d0b1e",
+    "format": "gguf",
+    "family": "mllama",
+    "parameter_size": "10.7B",
+    "quantization_level": "Q4_K_M"
+  },
+  {
+    "id": "gemma3:12b",
+    "name": "gemma3:12b",
+    "provider": "ollama",
+    "connection_type": "local",
+    "loaded_at_export": true,
+    "is_active": true,
+    "size_bytes": 8149190253,
+    "digest": "f4031aab637d1ffa37b42570452ae0e4fad0314754d17ded67322e4b95836f8a",
+    "format": "gguf",
+    "family": "gemma3",
+    "parameter_size": "12.2B",
+    "quantization_level": "Q4_K_M"
+  },
+  {
+    "id": "qwen2.5:7b",
+    "name": "qwen2.5:7b",
+    "provider": "ollama",
+    "connection_type": "local",
+    "loaded_at_export": false,
+    "is_active": true,
+    "size_bytes": 4683087332,
+    "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+    "format": "gguf",
+    "family": "qwen2",
+    "parameter_size": "7.6B",
+    "quantization_level": "Q4_K_M"
+  },
+  {
+    "id": "llama3.2:3b",
+    "name": "llama3.2:3b",
+    "provider": "ollama",
+    "connection_type": "local",
+    "loaded_at_export": false,
+    "is_active": true,
+    "size_bytes": 2019393189,
+    "digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+    "format": "gguf",
+    "family": "llama",
+    "parameter_size": "3.2B",
+    "quantization_level": "Q4_K_M"
+  }
+]
