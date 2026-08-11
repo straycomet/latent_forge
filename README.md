@@ -1,115 +1,52 @@
-# latent_forge
+# Latent Forge
 
-Experiments in local AI inference — a collection of documentation and scripts for running, benchmarking, and evaluating large language models locally.
+**Open-source infrastructure experiments for local and distributed AI.**
 
-## Overview
-Latent Forge documents and automates practical AI infrastructure built from local hardware: model serving, multi-node inference, high-speed networking, storage, containers, accelerators, agent runtimes, monitoring, and performance testing.
+Latent Forge documents practical AI infrastructure built and tested on local hardware: model serving, multi-node inference, high-speed networking, storage, containers, accelerators, agent runtimes, monitoring, user interfaces, and performance testing.
 
-`latent_forge` provides:
+The emphasis is reproducibility. Each experiment should record the relevant hardware, runtime, network path, exact commands, validation steps, observed results, and meaningful failures.
 
-- **Scripts** for downloading models, running inference, and benchmarking performance.
-- **Tests** for validating model outputs and infrastructure.
-- **Documentation** on setup, usage, and tips for local AI experiments.
+## What has been implemented or tested
 
-## Requirements
+### Inference runtimes
 
-- Python 3.10+
-- [Ollama](https://ollama.ai) or another local inference backend (e.g. llama.cpp, LM Studio)
-- Sufficient VRAM/RAM for the models you want to run (see model-specific notes below)
+- **Ollama** — convenient local model management and serving.
+- **llama.cpp** — GGUF inference, CUDA/Vulkan experimentation, OpenAI-compatible serving, and local model integration testing.
+- **vLLM** — OpenAI-compatible model serving and distributed inference. The current documented configuration runs unquantized `Qwen/Qwen3-32B` across two NVIDIA GB10 nodes with Ray and pipeline parallelism.
 
-Install Python dependencies:
+These are treated as different tools for different jobs rather than interchangeable wrappers.
 
-```bash
-pip install -r requirements.txt
-```
+### User interface
 
-## Repository Structure
+- **Open WebUI** — implemented as the browser-based access and orchestration layer over local inference backends. See [Open WebUI — Setup, Use, and Lab Notes](docs/openwebui.md).
 
-```
-latent_forge/
-├── README.md            # This file
-├── requirements.txt     # Python dependencies
-├── scripts/
-│   ├── run_inference.py         # Run a single prompt against a local model
-│   ├── benchmark.py             # Benchmark tokens-per-second for a model
-│   └── download_model.sh        # Helper to pull a model via Ollama
-└── tests/
-    ├── test_inference.py        # Smoke tests for the inference script
-    └── test_benchmark.py        # Tests for the benchmark script
-```
+### Agent runtimes
 
-## Quick Start
+- **Hermes Agent** — currently preferred; solid in lab testing. See [Hermes Agent — Setup, Use, and Lab Evaluation](docs/hermes-agent.md).
+- **OpenClaw** — compelling architecture but buggy in the tested environment; retained as experimental. See [OpenClaw — Setup, Use, and Lab Evaluation](docs/openclaw-agent.md).
 
-### 1. Pull a model with Ollama
+### Distributed inference
 
-```bash
-bash scripts/download_model.sh llama3
-```
+The first fully documented multi-node experiment uses:
 
-### 2. Run inference
+- 2 NVIDIA GB10 systems
+- Ray distributed executor
+- vLLM
+- pipeline parallelism: 2
+- tensor parallelism: 1
+- dedicated 10 GbE path at approximately 9.4 Gbit/s
+- `Qwen/Qwen3-32B` in BF16
+- 16,384-token context
 
-```bash
-python scripts/run_inference.py --model llama3 --prompt "Explain transformers in one sentence."
-```
+Observed benchmark results:
 
-### 3. Benchmark
-### Security and reliability
+- single request: about 3.6 completion tokens/s
+- four concurrent requests: about 14 completion tokens/s aggregate
 
-Because this repository is public and contains operational infrastructure examples, security and reliability are treated as part of the design rather than as cleanup work.
+See [Two-Node NVIDIA GB10 vLLM + Ray Setup and Benchmark](docs/two-node-gb10-vllm-ray-setup.md).
 
-- [Security and Reliability](docs/security-reliability.md) — public-repo hygiene, secret handling, service exposure, agent trust boundaries, restart/backoff policy, layered health checks, monitoring guidance, config preflight, and rules for publishing logs and machine-specific details.
+## Repository structure
 
-The working rule is simple: **make the experiment reproducible without publishing anything that does not need to be public.**
-
-### Local AI operations and model tracking
-
-```bash
-python scripts/benchmark.py --model llama3 --runs 5
-```
-
-### 4. Run tests
-
-```bash
-python -m pytest tests/
-```
-
-## Scripts
-
-### `scripts/run_inference.py`
-
-Sends a prompt to a locally running model via the Ollama HTTP API and prints the response.
-
-| Argument | Default | Description |
-|---|---|---|
-| `--model` | `llama3` | Model name as known to Ollama |
-| `--prompt` | *(required)* | The prompt text |
-| `--host` | `http://localhost:11434` | Ollama API base URL |
-| `--temperature` | `0.7` | Sampling temperature |
-
-### `scripts/benchmark.py`
-
-Measures tokens-per-second for a given model across multiple runs.
-
-| Argument | Default | Description |
-|---|---|---|
-| `--model` | `llama3` | Model name |
-| `--prompt` | `"Hello!"` | Prompt used for each run |
-| `--runs` | `3` | Number of timed runs |
-| `--host` | `http://localhost:11434` | Ollama API base URL |
-
-### `scripts/download_model.sh`
-
-Thin wrapper around `ollama pull`. Pass the model name as the first argument.
-
-```bash
-bash scripts/download_model.sh mistral
-```
-
-## Tips
-
-- Keep models on an NVMe SSD for best load times.
-- Prefer quantised models (Q4_K_M or Q5_K_M) for a good quality/speed trade-off on consumer hardware.
-- Set `OLLAMA_NUM_PARALLEL=1` to avoid OOM errors when VRAM is tight.
 ```text
 latent_forge/
 ├── README.md
@@ -118,6 +55,7 @@ latent_forge/
 │   ├── hermes-agent.md
 │   ├── model-registry.md
 │   ├── openclaw-agent.md
+│   ├── openwebui.md
 │   ├── security-reliability.md
 │   └── two-node-gb10-vllm-ray-setup.md
 ├── inventory/
@@ -130,25 +68,63 @@ latent_forge/
     └── start-ray-worker.sh
 ```
 
-The repository will expand as additional runtimes, models, accelerators, network layouts, storage patterns, monitoring tools, and agent frameworks are tested.
+## Runtime roles
 
-## Contributing
+A useful way to think about the stack is:
 
-Open issues or PRs to add new models, scripts, or evaluation datasets.
+```text
+Open WebUI     -> human interface / orchestration
+Hermes         -> autonomous agent layer
+Ollama         -> convenient local model runtime
+llama.cpp      -> flexible GGUF inference and experimentation
+vLLM           -> higher-throughput and distributed serving
+Ray            -> distributed execution layer for the current vLLM cluster
+```
+
+Keeping these responsibilities separate makes the lab easier to troubleshoot and lets one layer change without forcing a redesign of the others.
+
+## Local AI operations and model tracking
+
+Reusable operational assets include:
+
+- [Model registry](docs/model-registry.md) — historical model choices and lessons learned
+- [Experimentation log](docs/experimentation-log.md) — infrastructure experiments and observations
+- [Ollama inventory snapshot](inventory/ollama-model-inventory-2026-07-16.json) — point-in-time local model inventory
+- `scripts/healthcheck.sh` — generic service, disk, and NVIDIA GPU checks
+- `scripts/monitor-local-ai.sh` — host, GPU, Ollama, Docker, Tailscale, memory, disk, and AI service-port status
+
+## Security and reliability
+
+Because this repository is public and contains operational infrastructure examples, security and reliability are treated as design requirements rather than cleanup work.
+
+See [Security and Reliability](docs/security-reliability.md) for guidance on:
+
+- secret handling and repository hygiene
+- sanitizing logs, screenshots, inventories, and machine-specific details
+- service exposure and network binding
+- agent trust boundaries
+- configuration preflight and restart backoff
+- layered health checks
+- monitoring methodology
+- public-safe examples and reproducibility
+
+The working rule is simple: **make the experiment reproducible without publishing anything that does not need to be public.**
+
+## Design principles
+
 1. **Document the physical layer.** Cabling, negotiated link speed, routing, and switch-port choice matter.
-2. **Pin the working runtime.** Record the container image, CUDA/PyTorch/vLLM versions, and model identifier.
+2. **Pin the working runtime.** Record container images, CUDA/PyTorch/runtime versions, and model identifiers.
 3. **Make networking explicit.** Multi-homed machines should not be allowed to choose distributed-compute paths accidentally.
-4. **Persist expensive artifacts.** Model downloads and compilation caches must survive container restarts.
-5. **Measure before optimizing.** A configuration that fits a model is not necessarily a configuration that provides low latency.
-6. **Separate capacity from throughput.** Multi-node pipeline parallelism can increase model capacity even when single-stream latency does not improve.
-7. **Keep application concerns separate.** Latent Forge contains reusable AI infrastructure; application-specific tools, prompts, datasets, and integrations remain with their applications.
-8. **Separate the agent layer from the inference layer.** Agent runtimes such as Hermes and OpenClaw should be evaluated independently from Ollama, llama.cpp, vLLM, or cloud model providers.
-9. **Preserve failures, not just recipes.** Permission problems, routing mistakes, template incompatibilities, and broken service configurations are part of the experiment and should remain documented after the final configuration works.
+4. **Persist expensive artifacts intentionally.** Model downloads and compilation caches should survive disposable containers when appropriate, but should never be committed to Git.
+5. **Measure before optimizing.** A configuration that fits a model is not necessarily one that provides good latency or throughput.
+6. **Separate capacity from throughput.** Multi-node inference may increase model capacity without improving single-stream latency.
+7. **Keep application concerns separate.** Latent Forge contains reusable AI infrastructure; application-specific prompts, datasets, tools, and integrations stay with their applications.
+8. **Separate agent, UI, and inference layers.** Open WebUI, Hermes/OpenClaw, Ollama, llama.cpp, and vLLM solve different problems.
+9. **Preserve failures, not just recipes.** Routing mistakes, permission issues, template incompatibilities, and broken service configurations are valuable experimental evidence.
 10. **Design for a public repository.** Never rely on committed secrets, private data, hard-coded personal paths, or unnecessarily exposed services.
-11. **Fail safely.** Validate configuration before starting managed services, use restart backoff, and make unhealthy states obvious rather than silently self-restarting forever.
-12. **Monitor without perturbing.** Prefer lightweight observation, distinguish snapshots from time-series evidence, and document how metrics were measured.
+11. **Fail safely.** Validate configuration before starting managed services and use restart backoff.
+12. **Monitor without perturbing.** Prefer lightweight observation and distinguish snapshots from time-series evidence.
 
-## License
+## Status
 
-See [LICENSE](LICENSE).
-Early-stage lab repository. The first documented multi-node configuration is operational and benchmarked, generic local-AI operational assets are being consolidated here, agent runtimes are being evaluated as a separate infrastructure layer, and security/reliability rules now govern what gets published.
+Early-stage lab repository. Multi-node vLLM inference is operational and benchmarked, llama.cpp and Ollama have been used for local model serving and experimentation, Open WebUI is implemented as the browser interface, and Hermes/OpenClaw are being evaluated as a separate agent layer.
