@@ -3,6 +3,7 @@
 Experiments in local AI inference — a collection of documentation and scripts for running, benchmarking, and evaluating large language models locally.
 
 ## Overview
+Latent Forge documents and automates practical AI infrastructure built from local hardware: model serving, multi-node inference, high-speed networking, storage, containers, accelerators, agent runtimes, monitoring, and performance testing.
 
 `latent_forge` provides:
 
@@ -52,6 +53,15 @@ python scripts/run_inference.py --model llama3 --prompt "Explain transformers in
 ```
 
 ### 3. Benchmark
+### Security and reliability
+
+Because this repository is public and contains operational infrastructure examples, security and reliability are treated as part of the design rather than as cleanup work.
+
+- [Security and Reliability](docs/security-reliability.md) — public-repo hygiene, secret handling, service exposure, agent trust boundaries, restart/backoff policy, layered health checks, monitoring guidance, config preflight, and rules for publishing logs and machine-specific details.
+
+The working rule is simple: **make the experiment reproducible without publishing anything that does not need to be public.**
+
+### Local AI operations and model tracking
 
 ```bash
 python scripts/benchmark.py --model llama3 --runs 5
@@ -100,11 +110,45 @@ bash scripts/download_model.sh mistral
 - Keep models on an NVMe SSD for best load times.
 - Prefer quantised models (Q4_K_M or Q5_K_M) for a good quality/speed trade-off on consumer hardware.
 - Set `OLLAMA_NUM_PARALLEL=1` to avoid OOM errors when VRAM is tight.
+```text
+latent_forge/
+├── README.md
+├── docs/
+│   ├── experimentation-log.md
+│   ├── hermes-agent.md
+│   ├── model-registry.md
+│   ├── openclaw-agent.md
+│   ├── security-reliability.md
+│   └── two-node-gb10-vllm-ray-setup.md
+├── inventory/
+│   └── ollama-model-inventory-2026-07-16.json
+└── scripts/
+    ├── benchmark-vllm.sh
+    ├── healthcheck.sh
+    ├── monitor-local-ai.sh
+    ├── start-ray-head.sh
+    └── start-ray-worker.sh
+```
+
+The repository will expand as additional runtimes, models, accelerators, network layouts, storage patterns, monitoring tools, and agent frameworks are tested.
 
 ## Contributing
 
 Open issues or PRs to add new models, scripts, or evaluation datasets.
+1. **Document the physical layer.** Cabling, negotiated link speed, routing, and switch-port choice matter.
+2. **Pin the working runtime.** Record the container image, CUDA/PyTorch/vLLM versions, and model identifier.
+3. **Make networking explicit.** Multi-homed machines should not be allowed to choose distributed-compute paths accidentally.
+4. **Persist expensive artifacts.** Model downloads and compilation caches must survive container restarts.
+5. **Measure before optimizing.** A configuration that fits a model is not necessarily a configuration that provides low latency.
+6. **Separate capacity from throughput.** Multi-node pipeline parallelism can increase model capacity even when single-stream latency does not improve.
+7. **Keep application concerns separate.** Latent Forge contains reusable AI infrastructure; application-specific tools, prompts, datasets, and integrations remain with their applications.
+8. **Separate the agent layer from the inference layer.** Agent runtimes such as Hermes and OpenClaw should be evaluated independently from Ollama, llama.cpp, vLLM, or cloud model providers.
+9. **Preserve failures, not just recipes.** Permission problems, routing mistakes, template incompatibilities, and broken service configurations are part of the experiment and should remain documented after the final configuration works.
+10. **Design for a public repository.** Never rely on committed secrets, private data, hard-coded personal paths, or unnecessarily exposed services.
+11. **Fail safely.** Validate configuration before starting managed services, use restart backoff, and make unhealthy states obvious rather than silently self-restarting forever.
+12. **Monitor without perturbing.** Prefer lightweight observation, distinguish snapshots from time-series evidence, and document how metrics were measured.
 
 ## License
 
 See [LICENSE](LICENSE).
+Early-stage lab repository. The first documented multi-node configuration is operational and benchmarked, generic local-AI operational assets are being consolidated here, agent runtimes are being evaluated as a separate infrastructure layer, and security/reliability rules now govern what gets published.
