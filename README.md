@@ -45,6 +45,12 @@ Observed benchmark results:
 
 See [Two-Node NVIDIA GB10 vLLM + Ray Setup and Benchmark](docs/two-node-gb10-vllm-ray-setup.md).
 
+### Enterprise architecture comparison
+
+The lab is intentionally small, but many of the concerns are the same ones that appear in enterprise AI platforms: model serving, distributed scheduling, east-west networking, caching, API boundaries, monitoring, identity, reliability, and workload isolation.
+
+See [Local AI Lab vs Enterprise-Grade Cloud Infrastructure](docs/local-vs-enterprise-cloud-ai-infrastructure.md) for a detailed comparison of the current stack with a typical enterprise cloud inference platform, including where the local environment already uses production-style patterns and where enterprise systems add high availability, autoscaling, IAM, centralized secrets, observability, governance, CI/CD, and infrastructure-as-code.
+
 ## Repository structure
 
 ```text
@@ -53,6 +59,7 @@ latent_forge/
 ├── docs/
 │   ├── experimentation-log.md
 │   ├── hermes-agent.md
+│   ├── local-vs-enterprise-cloud-ai-infrastructure.md
 │   ├── model-registry.md
 │   ├── openclaw-agent.md
 │   ├── openwebui.md
