@@ -2,7 +2,7 @@
 
 **Open-source infrastructure experiments for local and distributed AI.**
 
-Latent Forge documents and automates practical AI infrastructure built from local hardware: model serving, multi-node inference, high-speed networking, storage, containers, accelerators, agent runtimes, and performance testing.
+Latent Forge documents and automates practical AI infrastructure built from local hardware: model serving, multi-node inference, high-speed networking, storage, containers, accelerators, agent runtimes, monitoring, and performance testing.
 
 The focus is reproducibility. Each experiment records the hardware, network topology, runtime configuration, exact commands that worked, validation steps, measured results, and a short postmortem for failures that materially changed the final design.
 
@@ -37,6 +37,14 @@ Latent Forge also records hands-on evaluations of general-purpose autonomous-age
 
 The current lab conclusion is deliberately empirical: **Hermes is preferred; OpenClaw remains experimental and worth periodically retesting.**
 
+### Security and reliability
+
+Because this repository is public and contains operational infrastructure examples, security and reliability are treated as part of the design rather than as cleanup work.
+
+- [Security and Reliability](docs/security-reliability.md) — public-repo hygiene, secret handling, service exposure, agent trust boundaries, restart/backoff policy, layered health checks, monitoring guidance, config preflight, and rules for publishing logs and machine-specific details.
+
+The working rule is simple: **make the experiment reproducible without publishing anything that does not need to be public.**
+
 ### Local AI operations and model tracking
 
 The repository also contains reusable local-AI operational assets that were separated from the ChartSense application repository:
@@ -57,6 +65,7 @@ latent_forge/
 │   ├── hermes-agent.md
 │   ├── model-registry.md
 │   ├── openclaw-agent.md
+│   ├── security-reliability.md
 │   └── two-node-gb10-vllm-ray-setup.md
 ├── inventory/
 │   └── ollama-model-inventory-2026-07-16.json
@@ -68,7 +77,7 @@ latent_forge/
     └── start-ray-worker.sh
 ```
 
-The repository will expand as additional runtimes, models, accelerators, network layouts, storage patterns, and agent frameworks are tested.
+The repository will expand as additional runtimes, models, accelerators, network layouts, storage patterns, monitoring tools, and agent frameworks are tested.
 
 ## Design principles
 
@@ -81,7 +90,10 @@ The repository will expand as additional runtimes, models, accelerators, network
 7. **Keep application concerns separate.** Latent Forge contains reusable AI infrastructure; application-specific tools, prompts, datasets, and integrations remain with their applications.
 8. **Separate the agent layer from the inference layer.** Agent runtimes such as Hermes and OpenClaw should be evaluated independently from Ollama, llama.cpp, vLLM, or cloud model providers.
 9. **Preserve failures, not just recipes.** Permission problems, routing mistakes, template incompatibilities, and broken service configurations are part of the experiment and should remain documented after the final configuration works.
+10. **Design for a public repository.** Never rely on committed secrets, private data, hard-coded personal paths, or unnecessarily exposed services.
+11. **Fail safely.** Validate configuration before starting managed services, use restart backoff, and make unhealthy states obvious rather than silently self-restarting forever.
+12. **Monitor without perturbing.** Prefer lightweight observation, distinguish snapshots from time-series evidence, and document how metrics were measured.
 
 ## Status
 
-Early-stage lab repository. The first documented multi-node configuration is operational and benchmarked, generic local-AI operational assets are being consolidated here, and agent runtimes are now being evaluated as a separate infrastructure layer.
+Early-stage lab repository. The first documented multi-node configuration is operational and benchmarked, generic local-AI operational assets are being consolidated here, agent runtimes are being evaluated as a separate infrastructure layer, and security/reliability rules now govern what gets published.
